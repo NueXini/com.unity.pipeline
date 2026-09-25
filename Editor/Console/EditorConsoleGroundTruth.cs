@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Unity.Pipeline.Console;
 using Unity.Pipeline.Models;
 using UnityEditor;
@@ -49,8 +50,10 @@ namespace Unity.Pipeline.Editor.Console
             EditorApplication.update -= Sample;
             EditorApplication.update += Sample;
 
+#if UNITY_6000_0_OR_NEWER
             ConsoleWindowUtility.consoleLogsChanged -= OnConsoleLogsChanged;
             ConsoleWindowUtility.consoleLogsChanged += OnConsoleLogsChanged;
+#endif
 
             AssemblyReloadEvents.afterAssemblyReload -= OnAfterAssemblyReload;
             AssemblyReloadEvents.afterAssemblyReload += OnAfterAssemblyReload;
@@ -67,7 +70,7 @@ namespace Unity.Pipeline.Editor.Console
             if (!s_Seeded)
                 TrySeed();
 
-            ConsoleWindowUtility.GetConsoleLogCounts(out var errors, out var warnings, out var logs);
+            GetConsoleLogCounts(out var errors, out var warnings, out var logs);
             var total = errors + warnings + logs;
             var seq = ConsoleLogCapture.Buffer.LastSeq;
 
@@ -191,6 +194,72 @@ namespace Unity.Pipeline.Editor.Console
         }
 
         static string Key(string logType, string message) => logType + "|" + message;
+
+#if UNITY_6000_0_OR_NEWER
+        static void GetConsoleLogCounts(out int errors, out int warnings, out int logs)
+            => ConsoleWindowUtility.GetConsoleLogCounts(out errors, out warnings, out logs);
+#else
+        static readonly MethodInfo k_GetCountsByType = FindCountsMethod();
+        static bool s_CountsWarned;
+
+        // ConsoleWindowUtility does not exist before Unity 6; the same counts live on the internal
+        // UnityEditor.LogEntries.GetCountsByType, reached by reflection like EditorConsoleEntries.
+        // Failure degrades to zero counts, which only disables the dropped-callback watchdog —
+        // capture itself does not read them.
+        static MethodInfo FindCountsMethod()
+        {
+            var logEntries = Type.GetType("UnityEditor.LogEntries,UnityEditor");
+            if (logEntries == null)
+                return null;
+            const BindingFlags statics = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+            foreach (var m in logEntries.GetMethods(statics))
+            {
+                if (m.Name == "GetCountsByType")
+                    return m;
+            }
+            return null;
+        }
+
+        static void GetConsoleLogCounts(out int errors, out int warnings, out int logs)
+        {
+            errors = warnings = logs = 0;
+            if (k_GetCountsByType == null)
+                return;
+
+            // The signature has drifted between editor versions: three ref ints, optionally with an
+            // includeConsoleLogs bool. Fill by parameter type and read the ints back in order.
+            var ps = k_GetCountsByType.GetParameters();
+            var args = new object[ps.Length];
+            var intSlots = new List<int>(3);
+            for (var i = 0; i < ps.Length; i++)
+            {
+                if (ps[i].ParameterType == typeof(bool))
+                    args[i] = true;
+                else
+                    intSlots.Add(i);
+            }
+            if (intSlots.Count < 3)
+                return;
+
+            try
+            {
+                k_GetCountsByType.Invoke(null, args);
+            }
+            catch (Exception ex)
+            {
+                if (!s_CountsWarned)
+                {
+                    s_CountsWarned = true;
+                    Debug.LogWarning($"[Unity.Pipeline] LogEntries.GetCountsByType failed, console counts will read as zero: {ex.Message}");
+                }
+                return;
+            }
+
+            errors = (int)args[intSlots[0]];
+            warnings = (int)args[intSlots[1]];
+            logs = (int)args[intSlots[2]];
+        }
+#endif
 
         /// <summary>Sample immediately, ignoring the throttle. For tests.</summary>
         internal static void SampleForTests()
