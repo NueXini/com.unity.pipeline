@@ -17,9 +17,15 @@
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll",
+        "UnityPipeline.Microsoft.CodeAnalysis.dll",
+        "UnityPipeline.Microsoft.CodeAnalysis.CSharp.dll",
+        "UnityPipeline.System.Collections.Immutable.dll",
+        "UnityPipeline.System.Reflection.Metadata.dll",
+        "UnityPipeline.System.Runtime.CompilerServices.Unsafe.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [
