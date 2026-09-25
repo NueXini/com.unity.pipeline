@@ -7,6 +7,11 @@ using Unity.Pipeline.Models;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
+#if !UNITY_6000_0_OR_NEWER
+// Unity 6 renamed PhysicMaterial to PhysicsMaterial (CLI-222); alias the legacy name so the
+// shared body compiles unchanged on older editors.
+using PhysicsMaterial = UnityEngine.PhysicMaterial;
+#endif
 
 namespace Unity.Pipeline.Editor.Commands.Assets
 {
