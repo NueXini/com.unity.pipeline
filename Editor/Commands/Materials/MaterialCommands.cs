@@ -46,7 +46,13 @@ namespace Unity.Pipeline.Editor.Commands.Materials
                 // rawRenderQueue is -1 when the material inherits from the shader and a positive
                 // integer when explicitly overridden — returning the raw value preserves the
                 // round-trip contract with set_material_properties renderQueue:-1 (inherit).
+                // Before Unity 6 the public renderQueue getter itself returns that raw value;
+                // Unity 6 changed it to the effective queue and added rawRenderQueue for the raw one.
+#if UNITY_6000_0_OR_NEWER
                 RenderQueue = mat.rawRenderQueue,
+#else
+                RenderQueue = mat.renderQueue,
+#endif
                 EnabledKeywords = GetEnabledKeywords(mat),
             };
 
