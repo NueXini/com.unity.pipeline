@@ -3,6 +3,11 @@ using Unity.Pipeline.Editor.Authoring;
 using Unity.Pipeline.Editor.Commands.Assets;
 using UnityEditor;
 using UnityEngine;
+#if !UNITY_6000_0_OR_NEWER
+// Unity 6 renamed PhysicMaterial to PhysicsMaterial (CLI-222); alias the legacy name so the
+// shared tests compile unchanged on older editors.
+using PhysicsMaterial = UnityEngine.PhysicMaterial;
+#endif
 
 namespace Unity.Pipeline.Tests.Editor.Assets
 {
