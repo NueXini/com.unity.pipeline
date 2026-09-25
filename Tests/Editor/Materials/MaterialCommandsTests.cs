@@ -294,7 +294,7 @@ namespace Unity.Pipeline.Tests.Editor.Materials
             // default can legitimately equal the prior override (e.g. 3000), so comparing the effective
             // value would be flaky. rawRenderQueue is -1 exactly when the material inherits the shader's.
             var mat = AssetDatabase.LoadAssetAtPath<Material>(handle.Path);
-            Assert.AreEqual(-1, mat.rawRenderQueue, "renderQueue -1 should clear the override and inherit from the shader");
+            Assert.AreEqual(-1, RawRenderQueue(mat), "renderQueue -1 should clear the override and inherit from the shader");
         }
 
         // ---- unknown / mismatch -------------------------------------------------------------------
@@ -374,6 +374,17 @@ namespace Unity.Pipeline.Tests.Editor.Materials
                 var c = Components(Prop(read, ColorProp).Value);
                 Assert.AreEqual(1f, c[0], 1e-4f);
             }
+        }
+
+        // Before Unity 6 the public renderQueue getter returns the raw override value (-1 = inherit);
+        // Unity 6 split that into rawRenderQueue.
+        static int RawRenderQueue(Material mat)
+        {
+#if UNITY_6000_0_OR_NEWER
+            return mat.rawRenderQueue;
+#else
+            return mat.renderQueue;
+#endif
         }
     }
 }
