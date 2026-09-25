@@ -32,6 +32,7 @@ namespace Unity.Pipeline.Editor
 #endif
     internal static class PipelineAnalytics
     {
+#if UNITY_6000_0_OR_NEWER
         private const string VendorKey = "unity.pipeline";
 
         private const string SessionStartedEventName = "Pipeline_SessionStarted";
@@ -364,5 +365,17 @@ namespace Unity.Pipeline.Editor
                 return true;
             }
         }
+#else
+        // The analytics events rely on the Unity 6 UnityEngine.Analytics IAnalytic surface, which
+        // older editors do not have. The two entry points stay as no-ops so EditorPipelineServer
+        // and EditorPipelineStartup keep compiling unchanged.
+        internal static void RecordCommandExecuted(in CommandExecutionInfo info)
+        {
+        }
+
+        internal static void SendSessionStoppedIfStarted()
+        {
+        }
+#endif
     }
 }

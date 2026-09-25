@@ -1,3 +1,6 @@
+// These fixtures drive PipelineAnalytics through the Unity 6 IAnalytic surface it reports with;
+// on older editors the telemetry entry points are no-ops, so there is nothing to assert.
+#if UNITY_6000_0_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -457,3 +460,4 @@ namespace Unity.Pipeline.Tests.Editor
         #endregion
     }
 }
+#endif
